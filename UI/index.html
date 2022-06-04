@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>iAdmin</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/quasar@2.6.1/dist/quasar.prod.css" rel="stylesheet" type="text/css">
+    <link href="style.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+    <div id="app" class="hide">
+        <div class="background"></div>
+        <main @mouseover="checkGroup()" >
+            <nav>
+                <p class="nav-Title">iAdmin</p>
+                
+                    <q-tabs
+                            v-model="tab"
+                            inline-label
+                            vertical
+                            class="text-white"
+                            indicator-color="orange"
+                            :key="componentKey"
+                    >
+                    
+                        <q-tab name="logs" icon="view_list" label="Logs" v-if="this.personalgroup == 'superadmin'" :key="componentKey" ></q-tab>
+                        <q-tab name="server" icon="people" label="Actions" v-if="this.personalgroup == 'superadmin'" :key="componentKey"></q-tab>
+                        <q-tab name="player" icon="person" label="Player" v-if="this.personalgroup == 'superadmin'" :key="componentKey"></q-tab>
+                        <q-tab name="bans" icon="dns" label="Bans" v-if="this.personalgroup == 'superadmin'" :key="componentKey"></q-tab>
+                        <q-tab name="warn" icon="feedback" label="Warns" v-if="this.personalgroup == 'superadmin'" :key="componentKey"></q-tab>
+                        <q-tab name="report" icon="feedback" label="Report" ></q-tab>
+                    
+                </q-tabs>
+            </nav>
+            <div class="view-panel">
+                <q-tab-panels
+                        v-model="tab"
+                        animated
+                        transition-prev="slide-down"
+                        transition-next="slide-up"
+                        class="panel-container"
+                        
+                >
+                    <q-tab-panel name="logs" v-if="this.personalgroup == 'superadmin'" :key="componentKey">
+                        <div class="loading-panel" v-if="this.logsloading">
+                            <q-spinner-hourglass
+                                    color="orange"
+                                    size="2em">
+                            </q-spinner-hourglass>
+                        </div>
+                        <p class="panel-title">Logs</p>
+                        <div class="logs-container">
+                            <div class="logs-filter">
+                                <div>
+                                    <q-input
+                                        v-model="logskeywordFilter"
+                                        label="Mot clé"
+                                        dense
+                                        clearable
+                                        dark
+                                        class="filter-input"
+                                        @keyup="filterLogs"
+                                        @update:model-value="filterLogs()"
+                                        ></q-input>
+                                </div>
+                                <div>
+                                    <q-select
+                                        v-model="logsfilter"
+                                        :options="logsFilterOptions"
+                                        label="Filter"
+                                        dense
+                                        clearable
+                                        dark
+                                        class="filter-select"
+                                        :value="logsfilter"
+                                        
+                                        @update:model-value="filterLogs()" 
+                                        :options="logsFilterOp"
+                                    />
+                                </div>
+                                <div>
+
+                                    <q-input v-model="logsdate" clearable dark label="Date" @update:model-value="filterLogs()"/>
+                                    <template v-slot:append>
+                                        <q-icon name="date_range" color="orange" >
+                                            <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                                                <q-date v-model="logsdate" mask="YYYY-MM-DD"
+
+                                                        color="orange"
+                                                        text-color="black"
+                                                        dark
+                                                        bordered
+                                                        @update:model-value="filterLogs()"
+                                                >
+                                                    <div class="row items-center justify-end">
+                                                        <q-btn v-close-popup label="Close" color="primary" flat></q-btn>
+                                                    </div>
+                                                </q-date>
+                                            </q-popup-proxy>
+                                        </q-icon>
+                                    </template>
+
+                                </div>
+                                <div class="panel-logs-hour-container">
+                                    <q-input v-model="logstimeStart" mask="time" clearable dark label="Temps début" @update:model-value="filterLogs()">
+                                        <template v-slot:append>
+                                            <q-icon name="access_time" class="cursor-pointer" color="orange">
+                                                <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                                                    <q-time v-model="logstimeStart"
+                                                            color="orange"
+                                                            text-color="black"
+                                                            dark
+                                                            bordered
+                                                            @update:model-value="filterLogs()"
+                                                    >
+                                                        <div class="row items-center justify-end">
+                                                            <q-btn v-close-popup label="Close" color="primary" flat></q-btn>
+                                                        </div>
+                                                    </q-time>
+                                                </q-popup-proxy>
+                                            </q-icon>
+                                        </template>
+                                    </q-input>
+                                    <q-input v-model="logstimeEnd" mask="time" clearable dark label="Temps Fin" @update:model-value="filterLogs()">
+                                        <template v-slot:append>
+                                            <q-icon name="access_time" class="cursor-pointer" color="orange">
+                                                <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                                                    <q-time v-model="logstimeEnd"
+                                                            color="orange"
+                                                            text-color="black"
+                                                            dark
+                                                            bordered
+                                                            @update:model-value="filterLogs()"
+                                                    >
+                                                        <div class="row items-center justify-end">
+                                                            <q-btn v-close-popup label="Close" color="primary" flat />
+                                                        </div>
+                                                    </q-time>
+                                                </q-popup-proxy>
+                                            </q-icon>
+                                        </template>
+                                    </q-input>
+                                </div>
+
+                            </div>
+                            <q-table
+                                :rows="filteredLogs"
+                                :columns="logsTableColumns"
+                                :loading="logsloading"
+                                @request="AddLogs"
+                                row-key="id"
+                                class="panel-logs-table"
+                                dark>
+                            </q-table>
+                        </div>
+                    </q-tab-panel>
+                    
+                    <q-tab-panel name="server" v-if="this.personalgroup == 'superadmin'" :key="componentKey">
+                        <div class="loading-panel hide">
+                            <q-spinner-hourglass
+                                    color="orange"
+                                    size="2em"
+                            />
+                        </div>
+                        <p class="panel-title">Actions</p>
+                        <div class="server-actions-container">
+                            <div class="server-actions-action-container">
+                                <div class="server-actions-action-title">
+                                    <p class="serveraction-title"><q-icon name="info"></q-icon> - Envoyez un message au serveur.</p>
+                                </div>
+                                <div class="server-actions-action-input-message-container">
+                                    <q-editor
+                                            v-model="serverActionMessageAll"
+                                            min-height="5rem"
+
+                                            toolbar-text-color="white"
+                                            toolbar-toggle-color="yellow-8"
+                                            toolbar-bg="orange"
+                                            dark
+                                    ></q-editor>
+                                    <q-btn :flat="true" class="server-actions-btn"  icon="send" color="orange" @click="this.messageAll"></q-btn>
+                                </div>
+                            </div>
+
+
+                            <div class="server-actions-action-container">
+                                <div class="server-actions-action-title">
+                                    <p class="serveraction-title"><q-icon name="touch_app"></q-icon> - Liste des commandes serveur</p>
+
+                                </div>
+                                <div class="server-actions-action-button-container">
+
+
+                                    <q-btn dark icon="local_fire_department" label="Suppresion de tout les vehicules" v-on:click="serverActionDelAllVehDialog = true;"></q-btn>
+                                    <q-btn dark icon="visibility" label="Suppresion de tout les peds" v-on:click="serverActionDelAllObjDialog = true;"></q-btn>
+                                    <q-btn dark icon="pin_drop" label="Suppresion de tout les props" v-on:click="serverActionDelAllPedsDialog = true;"></q-btn>
+                                    <q-btn dark icon="pin_drop" label="Give All" v-on:click="serverActionGiveAllDialog = true;"></q-btn>
+                                    <q-btn dark icon="local_hospital" label="Kick All" v-on:click="serverActionKickAllDialog = true;"></q-btn>
+                                    <q-btn dark icon="local_hospital" label="Crash All" v-on:click="serverActionCrashAllDialog = true;"></q-btn>
+                                    <q-btn dark icon="directions_walk" label="Teleport All" v-on:click="serverActionTeleportAllDialog = true;"></q-btn>
+
+                                </div>
+                            </div>
+                            <div class="server-actions-action-container">
+                                <div class="server-actions-action-title">
+                                    <p class="serveraction-title"><q-icon name="touch_app"></q-icon> - Liste des commandes personnel</p>
+
+                                </div>
+                                <div class="server-actions-action-button-container">
+
+                                    <q-checkbox dark left-label v-model="serverperso_collision" label="Collision" @update:model-value="playerAction('collision')"></q-checkbox>
+                                    <q-checkbox dark left-label v-model="serverperso_invisible" label="Invisible" @update:model-value="playerAction('invisible')"></q-checkbox>
+                                    <q-checkbox dark left-label v-model="serverperso_godmode" label="Godmode" @update:model-value="playerAction('godmode')"></q-checkbox>
+                                    <!-- <q-checkbox dark left-label v-model="serverperso_noclip" label="Noclip" @update:model-value="playerAction('noclip')"></q-checkbox> -->
+                                    <q-btn dark icon="directions_walk" label="Teleport on marker" v-on:click="playerAction('teleportMarker')"></q-btn>
+
+                                </div>
+                            </div>
+
+                        </div>
+                        <q-dialog transition-show="scale" transition-hide="scale" v-model="serverActionCrashAllDialog">
+                            <q-card dark style="width: 300px">
+                                <q-card-section>
+                                    <div class="text-h6">Confirmation</div>
+                                </q-card-section>
+                                <q-card-section>
+                                    <div class="text-h6">Voulez-vous faire crash tout le monde ?</div>
+                                </q-card-section>
+                                <q-card-section align="right">
+                                    <q-btn flat label="Crash" color="orange" v-close-popup v-on:click="playerAction('crashAll')" ></q-btn>
+                                    <q-btn flat label="Close" color="white" v-close-popup ></q-btn>
+                                </q-card-section>
+                            </q-card>
+                        </q-dialog>
+                        
+                        <q-dialog transition-show="scale" transition-hide="scale" v-model="serverActionKickAllDialog">
+                            <q-card dark style="width: 300px">
+                                <q-card-section>
+                                    <div class="text-h6">Confirmation</div>
+                                </q-card-section>
+                                <q-card-section>
+                                    <div class="text-h6">Voulez-vous faire kick tout le monde ?</div>
+                                </q-card-section>
+                                <q-card-section align="right">
+                                    <q-btn flat label="Kick" color="orange" v-close-popup v-on:click="playerAction('kickAll')" ></q-btn>
+                                    <q-btn flat label="Close" color="white" v-close-popup ></q-btn>
+                                </q-card-section>
+                            </q-card>
+                        </q-dialog>
+                        
+                        <q-dialog transition-show="scale" transition-hide="scale" v-model="serverActionTeleportAllDialog">
+                            <q-card dark style="width: 300px">
+                                <q-card-section>
+                                    <div class="text-h6">Confirmation</div>
+                                </q-card-section>
+                                <q-card-section>
+                                    <div class="text-h6">Voulez-vous faire téléporter tout le monde à vous ?</div>
+                                </q-card-section>
+                                <q-card-section align="right">
+                                    <q-btn flat label="Téléporter" color="orange" v-close-popup v-on:click="playerAction('teleportAll')" ></q-btn>
+                                    <q-btn flat label="Close" color="white" v-close-popup ></q-btn>
+                                </q-card-section>
+                            </q-card>
+                        </q-dialog>
+                        
+                        <q-dialog transition-show="scale" transition-hide="scale" v-model="serverActionDelAllVehDialog">
+                            <q-card dark style="width: 300px">
+                                <q-card-section>
+                                    <div class="text-h6">Confirmation</div>
+                                </q-card-section>
+                                <q-card-section>
+                                    <div class="text-h6">Voulez-vous faire supprimer tout les vehicules ?</div>
+                                </q-card-section>
+                                <q-card-section align="right">
+                                    <q-btn flat label="Supprimer" color="orange" v-close-popup v-on:click="playerAction('deleteAllVehicle')" ></q-btn>
+                                    <q-btn flat label="Close" color="white" v-close-popup ></q-btn>
+                                </q-card-section>
+                            </q-card>
+                        </q-dialog>
+                        
+                        <q-dialog transition-show="scale" transition-hide="scale" v-model="serverActionDelAllObjDialog">
+                            <q-card dark style="width: 300px">
+                                <q-card-section>
+                                    <div class="text-h6">Confirmation</div>
+                                </q-card-section>
+                                <q-card-section>
+                                    <div class="text-h6">Voulez-vous faire supprimer tout les objets ?</div>
+                                </q-card-section>
+                                <q-card-section align="right">
+                                    <q-btn flat label="Supprimer" color="orange" v-close-popup v-on:click="playerAction('deleteAllObject')" ></q-btn>
+                                    <q-btn flat label="Close" color="white" v-close-popup ></q-btn>
+                                </q-card-section>
+                            </q-card>
+                        </q-dialog>
+                        
+                        <q-dialog transition-show="scale" transition-hide="scale" v-model="serverActionDelAllPedsDialog">
+                            <q-card dark style="width: 300px">
+                                <q-card-section>
+                                    <div class="text-h6">Confirmation</div>
+                                </q-card-section>
+                                <q-card-section>
+                                    <div class="text-h6">Voulez-vous faire supprimer tout les peds ?</div>
+                                </q-card-section>
+                                <q-card-section align="right">
+                                    <q-btn flat label="Supprimer" color="orange" v-close-popup v-on:click="playerAction('deleteAllPeds')" ></q-btn>
+                                    <q-btn flat label="Close" color="white" v-close-popup ></q-btn>
+                                </q-card-section>
+                            </q-card>
+                        </q-dialog>
+
+                        <q-dialog transition-show="scale" transition-hide="scale" v-model="serverActionGiveAllDialog">
+                            <q-card dark style="width: 300px">
+                                <q-card-section>
+                                    <div class="text-h6">Choix du give:</div>
+                                </q-card-section>
+                                <q-card-section>
+                                    <q-list
+                                    dark 
+                                    padding 
+                                    bordered 
+                                    class="rounded-borders" 
+                                    style="max-width: 328px"
+                                    >
+                                        <q-expansion-item
+                                            group="somegroup"
+                                            icon="category"
+                                            label="Items"
+                                            default-opened
+                                            header-class="text-blue"
+                                            dark
+                                        >
+                                            <q-card class="bg-grey-9">
+                                                <q-card-section>
+                                                    <q-input
+                                                        ref="serverActionGiveDialog_ItemNameRef"
+                                                        filled
+                                                        v-model="serverActionGiveDialog_ItemName"
+                                                        label="Item name"
+                                                        hint="ID name"
+                                                        lazy-rules
+                                                        :rules="nameRules"
+                                                        dark
+                                                    ></q-input>
+
+                                                    <q-separator dark spaced></q-separator>
+                                                    <q-input
+                                                        ref="serverActionGiveDialog_ItemAmountRef"
+                                                        filled
+                                                        type="number"
+                                                        v-model="serverActionGiveDialog_ItemAmount"
+                                                        label="Amount"
+                                                        hint="]0;10000000["
+                                                        lazy-rules
+                                                        :rules="amountRules"
+                                                        dark
+                                                    ></q-input>
+                                                    <q-separator dark spaced></q-separator>
+                                                    <q-btn round color="orange" icon="add" v-on:click="playerAction('giveItemAll')"/>
+                                                </q-card-section>
+                                            </q-card>
+                                        </q-expansion-item>
+                                        <q-separator></q-separator>
+
+                                        <q-expansion-item group="somegroup" icon="stars" label="Weapons" header-class="text-red">
+                                            <q-card class="bg-grey-9">
+                                            <q-card-section>
+                                                <q-input
+                                                    ref="serverActionGiveDialog_WeaponNameRef"
+                                                    filled
+                                                    v-model="serverActionGiveDialog_WeaponName"
+                                                    label="Weapon name"
+                                                    hint="ID name"
+                                                    lazy-rules
+                                                    :rules="nameRules"
+                                                    dark
+                                                ></q-input>
+
+                                                <q-separator dark spaced></q-separator>
+                                                <q-input
+                                                    ref="serverActionGiveDialog_WeaponAmountRef"
+                                                    filled
+                                                    type="number"
+                                                    v-model="serverActionGiveDialog_WeaponAmount"
+                                                    label="Ammo Amount"
+                                                    hint="]0;10000000["
+                                                    lazy-rules
+                                                    :rules="amountRules"
+                                                    dark
+                                                ></q-input>
+                                                <q-separator dark spaced></q-separator>
+                                                <q-btn round color="orange" icon="add" v-on:click="playerAction('giveWeaponAll')"/>
+                                            </q-card-section>
+                                            </q-card>
+                                        </q-expansion-item>
+
+                                        <q-separator ></q-separator>
+
+                                        <q-expansion-item group="somegroup" icon="attach_money" label="Money" header-class="text-green">
+                                            <q-card class="bg-grey-9">
+                                            <q-card-section>
+                                                <q-card-section>
+                                                    <q-select dark outlined v-model="serverActionGiveDialog_MoneySelected" :options="serverActionGiveDialog_MoneyName" label="Outlined" ></q-select>
+                                                    
+                                                    <q-separator dark spaced></q-separator>
+                                                    <q-input
+                                                        ref="serverActionGiveDialog_MoneyAmountRef"
+                                                        filled
+                                                        type="number"
+                                                        v-model="serverActionGiveDialog_MoneyAmount"
+                                                        label="Money Amount"
+                                                        hint="]0;10000000["
+                                                        lazy-rules
+                                                        :rules="amountRules"
+                                                        dark
+                                                    ></q-input>
+                                                    <q-separator dark spaced></q-separator>
+                                                    <q-btn round color="orange" icon="add" v-on:click="playerAction('giveMoneyAll')"/>
+                                                </q-card-section>
+                                            </q-card-section>
+                                            </q-card>
+                                        </q-expansion-item>
+
+                                    </q-list>
+                                </q-card-section>
+                                <q-card-section align="right">
+                                    <q-btn flat label="Close" color="white" v-close-popup ></q-btn>
+                                </q-card-section>
+                            </q-card>
+                        </q-dialog>
+                        
+                    </q-tab-panel>
+
+                    <q-tab-panel name="player" v-if="this.personalgroup == 'superadmin'" :key="componentKey">
+                        <div class="loading-panel hide">
+                            <q-spinner-hourglass
+                                    color="orange"
+                                    size="2em"></q-spinner-hourglass>
+                        </div>
+                        <p class="panel-title">Player</p>
+                        <div class="player-container">
+                            <div class="player-filter-container">
+                                <q-input v-model="filterplayerName" label="Nom du joueur" clearable dark @keyup="filterPlayer"></q-input>
+                                <q-input v-model="filterplayerGrade" label="Grade du joueur" clearable dark @keyup="filterPlayer"></q-input>
+                            </div>
+
+                            <q-table
+                                    :rows="filteredPlayers"
+                                    :columns="playerTableColumns"
+                                    :loading="playerLoading"
+                                    row-key="id"
+                                    class="panel-player-table"
+                                    dark>
+                                <template v-slot:playerLoading>
+                                    <q-inner-loading showing color="primary"></q-inner-loading>
+                                </template>
+                                <template v-slot:body="props">
+                                    <q-tr :props="props" @mouseover="refreshPlayerInformation(props);this.setupPlayer(props)" :key="componentKey" v-on:click="this.showip=true;this.showcountry=true;this.showcity=true;this.showregion=true;this.showlat=true;this.showtimezone=true;this.showisp=true;this.showorg=true;this.showas=true;refreshPlayerInformation(props);this.setupPlayer(props);playerProfileShow = true;">
+                                        <q-td key="id" :props="props">
+                                            {{ props.row.id }}
+                                        </q-td>
+                                        <q-td key="name" :props="props">
+                                            {{ props.row.name }}
+                                        </q-td>
+                                        <q-td key="group" :props="props">
+                                            {{ props.row.group }}
+                                        </q-td>
+
+                                    </q-tr>
+                                </template>
+
+                            </q-table>
+
+                            <q-dialog full-width full-height v-model="playerProfileShow" >
+                                <q-card dark>
+                                    <q-card-section>
+                                        <div class="text-h6">Player Information</div>
+                                    </q-card-section>
+
+                                    <q-card-section class="player-dialog-container">
+                                        <div class="player-dialog-informations">
+                                            <q-card class="info-card fivem-info" flat bordered>
+                                                <q-item>
+                                                    <q-item-section avatar>
+                                                        <q-avatar size="40">
+                                                            <img src="assets/fivem.svg" alt="fivem"/>
+                                                        </q-avatar>
+                                                    </q-item-section>
+                                                    <q-item-section>
+                                                        <q-item-label>
+                                                            FiveM
+                                                        </q-item-label>
+                                                    </q-item-section>
+                                                </q-item>
+                                                <q-separator dark></q-separator>
+                                                <q-card-section vertical class="player-dialog-informations-container" >
+                                                    <!-- <div class="player-avatar">
+                                                        <q-avatar rounded>
+                                                            <img src="https://avatars.akamai.steamstatic.com/01737fe9d1d2477f42d87f7399fe249df1c81840_full.jpg" alt="player"/>
+                                                        </q-avatar>
+                                                    </div> -->
+                                                    <q-item>
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="person"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label>
+                                                                Name : {{playerName}} ({{playerId}})
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+                                                    <q-item>
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="fingerprint"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label>
+                                                                ID : {{playerLicence_low}}
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+                                                    <q-item>
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="military_tech"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label>
+                                                                Group : {{playerGroup}}
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+                                                    <q-item>
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="attach_money"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label>
+                                                                Liquide : {{playerMoney}}$
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+
+                                                    <q-item>
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="account_balance"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label>
+                                                                Banque : {{playerBank}}$
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+
+                                                    <q-item>
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="work"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label>
+                                                                Job : {{playerJob}} - {{playerGrade}}
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+
+                                                    <!-- <q-item>
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="favorite"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-linear-progress dark stripe rounded size="20px" :value="playerHealth" color="red" class="q-mt-sm"></q-linear-progress>
+                                                        </q-item-section>
+                                                    </q-item>
+
+                                                    <q-item>
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="lunch_dining"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-linear-progress dark stripe rounded size="20px" :value="playerFood" color="orange" class="q-mt-sm"></q-linear-progress>
+                                                        </q-item-section>
+                                                    </q-item>
+
+                                                    <q-item>
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="water_drop"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-linear-progress dark stripe rounded size="20px" :value="playerWater" color="blue" class="q-mt-sm"></q-linear-progress>
+                                                        </q-item-section>
+                                                    </q-item> -->
+
+
+
+                                                </q-card-section>
+
+                                            </q-card>
+
+                                            <q-card class="info-card steam-info" flat bordered>
+                                                <q-item>
+                                                    <q-item-section avatar>
+                                                        <q-avatar size="40">
+                                                            <img src="assets/steam.svg" alt="steam"/>
+                                                        </q-avatar>
+                                                    </q-item-section>
+                                                    <q-item-section>
+                                                        <q-item-label>
+                                                            Steam
+                                                        </q-item-label>
+                                                    </q-item-section>
+                                                </q-item>
+                                                <q-separator dark></q-separator>
+                                                <q-card-section vertical  class="player-dialog-informations-container">
+                                                    <div class="player-avatar">
+                                                        <q-avatar rounded>
+                                                            <img :src="playerSteam_avatar" alt="player"/>
+                                                        </q-avatar>
+                                                    </div>
+                                                    <q-item>
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="person"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label>
+                                                                Name : {{playerSteam_Name}}
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+                                                    <q-item>
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="person"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label>
+                                                                Real Name : {{playerSteam_RealName}}
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+                                                    <q-item>
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="fingerprint"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label>
+                                                                ID (hex) : {{playerSteamId}}
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+                                                    <q-item>
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="fingerprint"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label>
+                                                                ID (dec) : {{playerSteam_id_decimal}}
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+                                                    <!-- <q-item>
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="dns"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label>
+                                                                IP : 127.0.0.1
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item> -->
+                                                    <q-item>
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="language"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label>
+                                                                Pays : {{playerSteam_countrycode}}
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+                                                    <q-item>
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="sports_esports"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label>
+                                                                Game : {{playerSteam_gameinfo}}
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+
+
+
+
+                                                </q-card-section>
+                                            </q-card>
+
+                                            <q-card class="info-card other-info" flat bordered>
+                                                <q-item>
+                                                    <q-item-section avatar>
+                                                        <q-avatar size="40">
+                                                            <img src="assets/wifi.svg" alt="wifi"/>
+                                                        </q-avatar>
+                                                    </q-item-section>
+                                                    <q-item-section>
+                                                        <q-item-label>
+                                                            Other
+                                                        </q-item-label>
+                                                    </q-item-section>
+                                                </q-item>
+                                                <q-separator></q-separator>
+                                                <q-card-section vertical  class="player-dialog-informations-container">
+                                                    <!-- <div class="player-avatar">
+                                                        <q-avatar rounded>
+                                                            <img src="https://avatars.akamai.steamstatic.com/01737fe9d1d2477f42d87f7399fe249df1c81840_full.jpg" alt="player"/>
+                                                        </q-avatar>
+                                                    </div> -->
+                                                    <q-item>
+                                                        <q-item-section avatar>
+                                                            <q-icon color="orange" name="warning"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label>
+                                                                Attention ! Il est possible que ces informations sois fausse.
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+                                                    <q-item clickable @click="showip = !showip;">
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="person"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label :class="{'invisible':showip}" >
+                                                                IP : {{playerOther_ip}}
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+                                                    <q-item clickable @click="showcountry = !showcountry">
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="fingerprint"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label :class="{'invisible':showcountry}">
+                                                                Country : {{playerOther_country}}
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+                                                    <q-item clickable @click="showcity = !showcity">
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="fingerprint"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label :class="{'invisible':showcity}">
+                                                                City : {{playerOther_city}}
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+                                                    <q-item clickable @click="showregion = !showregion">
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="fingerprint"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label :class="{'invisible':showregion}">
+                                                                Region : {{playerOther_region}}
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+                                                    <q-item clickable @click="showlat = !showlat">
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="fingerprint"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label :class="{'invisible':showlat}">
+                                                                Coords : {{playerOther_lat}} - {{playerOther_lon}}
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+                                                    <q-item clickable @click="showtimezone = !showtimezone">
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="fingerprint"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label :class="{'invisible':showtimezone}">
+                                                                TimeZone : {{playerOther_timezone}}
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+                                                    <q-item clickable @click="showorg = !showorg">
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="fingerprint"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label :class="{'invisible':showorg}">
+                                                                Org : {{playerOther_org}}
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+                                                    <q-item clickable @click="showisp = !showisp">
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="fingerprint"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label :class="{'invisible':showisp}">
+                                                                ISP : {{playerOther_isp}}
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+                                                    <q-item clickable @click="showas = !showas">
+                                                        <q-item-section avatar>
+                                                            <q-icon color="white" name="fingerprint"></q-icon>
+                                                        </q-item-section>
+                                                        <q-item-section>
+                                                            <q-item-label :class="{'invisible':showas}">
+                                                                ASN : {{playerOther_as}}
+                                                            </q-item-label>
+                                                        </q-item-section>
+                                                    </q-item>
+
+                                                </q-card-section>
+                                            </q-card>
+
+
+                                        </div>
+                                        <div class="player-dialog-action">
+                                            <q-btn dark icon="block" label="Bannir" v-on:click="playerProfileBanDialog = true"></q-btn>
+                                            <q-btn dark icon="logout" label="Kicker" v-on:click="playerProfileKickDialog = true"></q-btn>
+                                            <q-btn dark icon="warning" label="Warn" v-on:click="playerProfileWarnDialog = true"></q-btn>
+                                            <q-btn dark icon="local_fire_department" label="Crash" v-on:click="playerProfileCrashDialog = true"></q-btn>
+                                            <q-btn dark icon="visibility" label="Spectate" v-on:click="playerAction('spectate')"></q-btn>
+                                            <q-btn dark icon="pin_drop" label="Go to" v-on:click="playerAction('goto')"></q-btn>
+                                            <q-btn dark icon="pin_drop" label="Bring" v-on:click="playerAction('bring')"></q-btn>
+                                            <q-btn dark icon="local_hospital" label="Heal" v-on:click="playerAction('heal')"></q-btn>
+                                            <q-btn dark icon="local_hospital" label="Réanimer" v-on:click="playerAction('revive')"></q-btn>
+                                            <q-btn dark icon="directions_walk" label="Freeze" v-on:click="playerAction('freeze')"></q-btn>
+                                            <q-btn dark icon="message" label="Message" v-on:click="playerProfileMessageDialog = true"></q-btn>
+                                            <!-- <q-btn dark icon="lock" label="Jail" v-on:click="playerAction('jail')"></q-btn> -->
+                                            <q-btn dark icon="add" label="Give" v-on:click="playerProfileGiveDialog=true;"></q-btn>
+                                            <!-- <q-btn dark icon="photo_camera" label="Capture d'écran" v-on:click="playerAction('screenshot')"></q-btn> -->
+                                            <q-btn dark icon="work" label="Set Job" v-on:click="playerProfileSetJobDialog=true;"></q-btn>
+                                            <!-- <q-btn dark icon="backpack" label="Set Weapon" v-on:click="playerAction('setweapon')"></q-btn>
+                                            <q-btn dark icon="backpack" label="Set Items" v-on:click="playerAction('setitem')"></q-btn> -->
+                                            <!-- <q-btn dark icon="backpack" label="Test Callback" v-on:click="Test()"></q-btn> -->
+
+                                        </div>
+                                    </q-card-section>
+
+                                    <q-card-actions align="right">
+                                        <q-btn flat label="OK" color="orange" v-close-popup />
+                                    </q-card-actions>
+                                </q-card>
+                            </q-dialog>
+                            <q-dialog transition-show="scale" transition-hide="scale" v-model="playerProfileBanDialog">
+                                <q-card dark style="width: 300px">
+                                    <q-card-section>
+                                        <div class="text-h6">Ban</div>
+                                    </q-card-section>
+                                    <q-card-section>
+                                        <q-input label="Raison" v-model="playerBanReason" type="text" placeholder="Raison du ban" dark></q-input>
+                                        <q-separator dark ></q-separator>
+                                        <q-input v-if="!playerBanTime_perm" label="Durée (min)" v-model="playerBanTime" type="text" placeholder="Durée du ban" dark></q-input>
+                                        <q-toggle v-model="playerBanTime_perm" label="Permanent" color="orange" icon="hourglass_empty" dark></q-toggle>
+                                    </q-card-section>
+                                    
+                                    <q-card-section align="right">
+                                        <q-btn flat label="Ban" color="orange" v-close-popup v-on:click="playerAction('ban')" ></q-btn>
+                                        <q-btn flat label="Close" color="white" v-close-popup v-on:click="playerBanTime_perm=false"></q-btn>
+                                    </q-card-section>
+                                </q-card>
+                            </q-dialog>
+                            <q-dialog transition-show="scale" transition-hide="scale" v-model="playerProfileKickDialog">
+                                <q-card dark style="width: 300px">
+                                    <q-card-section>
+                                        <div class="text-h6">Kick</div>
+                                    </q-card-section>
+                                    <q-card-section>
+                                        <q-input label="Raison" v-model="playerKickReason" type="text" placeholder="Raison du kick" dark></q-input>
+                                    </q-card-section>
+                                    <q-card-section align="right">
+                                        <q-btn flat label="Kick" color="orange" v-close-popup v-on:click="playerAction('kick')" ></q-btn>
+                                        <q-btn flat label="Close" color="white" v-close-popup ></q-btn>
+                                    </q-card-section>
+                                </q-card>
+                            </q-dialog>
+                            <q-dialog transition-show="scale" transition-hide="scale" v-model="playerProfileWarnDialog">
+                                <q-card dark style="width: 300px">
+                                    <q-card-section>
+                                        <div class="text-h6">Warn</div>
+                                    </q-card-section>
+                                    <q-card-section>
+                                        <q-input label="Raison" v-model="playerWarnReason" type="text" placeholder="Raison du warn" dark></q-input>
+                                    </q-card-section>
+                                    <q-card-section align="right">
+                                        <q-btn flat label="Warn" color="orange" v-close-popup v-on:click="playerAction('warn')" ></q-btn>
+                                        <q-btn flat label="Close" color="white" v-close-popup ></q-btn>
+                                    </q-card-section>
+                                </q-card>
+                            </q-dialog>
+                            <q-dialog transition-show="scale" transition-hide="scale" v-model="playerProfileCrashDialog">
+                                <q-card dark style="width: 300px">
+                                    <q-card-section>
+                                        <div class="text-h6">Confirmation</div>
+                                    </q-card-section>
+                                    <q-card-section>
+                                        <div class="text-h6">Voulez-vous faire crash {{playerName}} ?</div>
+                                    </q-card-section>
+                                    <q-card-section align="right">
+                                        <q-btn flat label="Crash" color="orange" v-close-popup v-on:click="playerAction('crash')" ></q-btn>
+                                        <q-btn flat label="Close" color="white" v-close-popup ></q-btn>
+                                    </q-card-section>
+                                </q-card>
+                            </q-dialog>
+                            <q-dialog transition-show="scale" transition-hide="scale" v-model="playerProfileMessageDialog">
+                                <q-card dark style="width: 400px">
+                                    <q-card-section>
+                                        <div class="text-h6">Message</div>
+                                    </q-card-section>
+                                    <q-card-section>
+                                        <q-input label="Message" v-model="playerMessage" type="text" placeholder="Message" dark></q-input>
+                                    </q-card-section>
+                                    <q-card-section align="right">
+                                        <q-btn flat label="Message" color="green" v-close-popup v-on:click="playerAction('message')" ></q-btn>
+                                        <q-btn flat label="Close" color="white" v-close-popup ></q-btn>
+                                    </q-card-section>
+                                </q-card>
+                            </q-dialog>
+                            <q-dialog transition-show="scale" transition-hide="scale" v-model="playerProfileSetJobDialog">
+                                <q-card dark style="width: 400px">
+                                    <q-card-section>
+                                        <div class="text-h6">Set Job</div>
+                                    </q-card-section>
+                                    <q-card-section>
+                                        <q-input label="Job Identifier" hint="police or ambulance or burgershot" v-model="playersetjob_name" type="text" placeholder="Job Identifier" dark></q-input>
+                                        <q-input label="Grade Identifier" hint="1 2 3 4 5 6 ..." v-model="playersetjob_grade" type="text" placeholder="Grade Identifier" dark></q-input>
+                                    </q-card-section>
+                                    <q-card-section align="right">
+                                        <q-btn flat label="Message" color="green" v-close-popup v-on:click="playerAction('setjob'); this.playerProfileShow = false;" ></q-btn>
+                                        <q-btn flat label="Close" color="white" v-close-popup ></q-btn>
+                                    </q-card-section>
+                                </q-card>
+                            </q-dialog>
+                            <q-dialog transition-show="scale" transition-hide="scale" v-model="playerProfileGiveDialog">
+                                <q-card dark style="width: 300px">
+                                    <q-card-section>
+                                        <div class="text-h6">Choix du give:</div>
+                                    </q-card-section>
+                                    <q-card-section>
+                                        <q-list
+                                        dark 
+                                        padding 
+                                        bordered 
+                                        class="rounded-borders" 
+                                        style="max-width: 328px"
+                                        >
+                                            <q-expansion-item
+                                                group="somegroup"
+                                                icon="category"
+                                                label="Items"
+                                                default-opened
+                                                header-class="text-blue"
+                                                dark
+                                            >
+                                                <q-card class="bg-grey-9">
+                                                    <q-card-section>
+                                                        <q-input
+                                                            ref="playerProfileGiveDialog_ItemNameRef"
+                                                            filled
+                                                            v-model="playerProfileGiveDialog_ItemName"
+                                                            label="Item name"
+                                                            hint="ID name"
+                                                            lazy-rules
+                                                            :rules="nameRules"
+                                                            dark
+                                                        ></q-input>
+    
+                                                        <q-separator dark spaced></q-separator>
+                                                        <q-input
+                                                            ref="playerProfileGiveDialog_ItemAmountRef"
+                                                            filled
+                                                            type="number"
+                                                            v-model="playerProfileGiveDialog_ItemAmount"
+                                                            label="Amount"
+                                                            hint="]0;10000000["
+                                                            lazy-rules
+                                                            :rules="amountRules"
+                                                            dark
+                                                        ></q-input>
+                                                        <q-separator dark spaced></q-separator>
+                                                        <q-btn round color="orange" icon="add" v-on:click="playerAction('giveItem');playerProfileShow = false;"/>
+                                                    </q-card-section>
+                                                </q-card>
+                                            </q-expansion-item>
+                                            <q-separator></q-separator>
+    
+                                            <q-expansion-item group="somegroup" icon="stars" label="Weapons" header-class="text-red">
+                                                <q-card class="bg-grey-9">
+                                                <q-card-section>
+                                                    <q-input
+                                                        ref="playerProfileGiveDialog_WeaponNameRef"
+                                                        filled
+                                                        v-model="playerProfileGiveDialog_WeaponName"
+                                                        label="Weapon name"
+                                                        hint="ID name"
+                                                        lazy-rules
+                                                        :rules="nameRules"
+                                                        dark
+                                                    ></q-input>
+    
+                                                    <q-separator dark spaced></q-separator>
+                                                    <q-input
+                                                        ref="playerProfileGiveDialog_WeaponAmountRef"
+                                                        filled
+                                                        type="number"
+                                                        v-model="playerProfileGiveDialog_WeaponAmount"
+                                                        label="Ammo Amount"
+                                                        hint="]0;10000000["
+                                                        lazy-rules
+                                                        :rules="amountRules"
+                                                        dark
+                                                    ></q-input>
+                                                    <q-separator dark spaced></q-separator>
+                                                    <q-btn round color="orange" icon="add" v-on:click="playerAction('giveWeapon');playerProfileShow = false;"/>
+                                                </q-card-section>
+                                                </q-card>
+                                            </q-expansion-item>
+    
+                                            <q-separator ></q-separator>
+    
+                                            <q-expansion-item group="somegroup" icon="attach_money" label="Money" header-class="text-green">
+                                                <q-card class="bg-grey-9">
+                                                <q-card-section>
+                                                    <q-card-section>
+                                                        <q-select dark outlined v-model="playerProfileGiveDialog_MoneySelected" :options="playerProfileGiveDialog_MoneyName" label="Outlined" ></q-select>
+                                                        
+                                                        <q-separator dark spaced></q-separator>
+                                                        <q-input
+                                                            ref="playerProfileGiveDialog_MoneyAmountRef"
+                                                            filled
+                                                            type="number"
+                                                            v-model="playerProfileGiveDialog_MoneyAmount"
+                                                            label="Money Amount"
+                                                            hint="]0;10000000["
+                                                            lazy-rules
+                                                            :rules="amountRules"
+                                                            dark
+                                                        ></q-input>
+                                                        <q-separator dark spaced></q-separator>
+                                                        <q-btn round color="orange" icon="add" v-on:click="playerAction('giveMoney');playerProfileShow = false;"/>
+                                                    </q-card-section>
+                                                </q-card-section>
+                                                </q-card>
+                                            </q-expansion-item>
+    
+                                        </q-list>
+                                    </q-card-section>
+                                    <q-card-section align="right">
+                                        <q-btn flat label="Close" color="white" v-close-popup ></q-btn>
+                                    </q-card-section>
+                                </q-card>
+                            </q-dialog>
+
+                        </div>
+                    </q-tab-panel>
+                    <q-tab-panel name="bans" v-if="this.personalgroup == 'superadmin'" :key="componentKey">
+                        <div class="loading-panel" v-if="this.bansloading">
+                            <q-spinner-hourglass
+                                    color="orange"
+                                    size="2em">
+                            </q-spinner-hourglass>
+                        </div>
+                        <p class="panel-title">Bans</p>
+                        <div class="logs-container">
+                            <div class="logs-filter">
+                                <div>
+                                    <q-input
+                                        v-model="banskeywordFilter"
+                                        label="Mot clé"
+                                        dense
+                                        clearable
+                                        dark
+                                        class="filter-input"
+                                        @keyup="filterbans"
+                                        @update:model-value="filterbans()"
+                                        ></q-input>
+                                </div>
+                                <div>
+
+                                    <q-input v-model="bansdate" clearable dark label="Date" @update:model-value="filterbans()"/>
+                                    <template v-slot:append>
+                                        <q-icon name="date_range" color="orange" >
+                                            <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                                                <q-date v-model="bansdate" mask="YYYY-MM-DD"
+
+                                                        color="orange"
+                                                        text-color="black"
+                                                        dark
+                                                        bordered
+                                                        @update:model-value="filterbans()"
+                                                >
+                                                    <div class="row items-center justify-end">
+                                                        <q-btn v-close-popup label="Close" color="primary" flat></q-btn>
+                                                    </div>
+                                                </q-date>
+                                            </q-popup-proxy>
+                                        </q-icon>
+                                    </template>
+
+                                </div>
+                            </div>
+                            <q-table
+                                :rows="filteredbans"
+                                :columns="bansTableColumns"
+                                :loading="bansloading"
+                                @request="AddBan"
+                                row-key="id"
+                                class="panel-logs-table"
+                                dark>
+                                <template v-slot:body="props">
+                                    <q-tr :props="props" v-on:click="bansPlayerInfo[0].name = props.row.name,bansPlayerInfo[0].licence = props.row.licence,bansPlayerInfo[0].reason = props.row.reason,bansPlayerInfo[0].date = props.row.banned_time,bansPlayerInfo[0].time = props.row.time,bansCheckDialog = true;">
+                                        <q-td key="name" :props="props">
+                                            {{ props.row.name }}
+                                        </q-td>
+                                        <q-td key="licence" :props="props">
+                                            {{ props.row.licence }}
+                                        </q-td>
+                                        <q-td key="banned_time" :props="props">
+                                            {{ props.row.banned_time }}
+                                        </q-td>
+                                        <q-td key="reason" :props="props">
+                                            {{ props.row.reason }}
+                                        </q-td>
+                                        <q-td key="time" :props="props">
+                                            {{ props.row.time }}
+                                        </q-td>
+                                    </q-tr>
+                                </template>
+                            </q-table>
+                        </div>
+                        <q-dialog
+                                v-model="bansCheckDialog"
+
+                                max-width="500px"
+                                max-height="500px"
+                                class="warn-dialog"
+                        >
+                            <q-card dark>
+                                <q-card-section>
+                                    <div class="text-h6">Ban Information</div>
+                                </q-card-section>
+                                <q-card-section class="warn-dialog-form-container">
+                                    <div>
+                                        <p>Player Name : {{bansPlayerInfo[0].name}}</p>
+                                    </div>
+                                    <div>
+                                        <p>Reason: {{bansPlayerInfo[0].reason}}</p>
+                                    </div>
+                                    <div>
+                                        <p>Date: {{bansPlayerInfo[0].date}}</p>
+                                    </div>
+                                    <div>
+                                        <p>Temps: {{bansPlayerInfo[0].time}}</p>
+                                    </div>
+                                    <div>
+                                        <p>License: {{bansPlayerInfo[0].licence}}</p>
+                                    </div>
+                                    
+                                    
+                                </q-card-section>
+
+                                <q-card-actions align="right">
+                                    <q-btn flat label="Delete" color="red" v-close-popup v-on:click="DeleteBanA(bansPlayerInfo[0].licence)" ></q-btn>
+                                    <q-btn flat label="Close" color="orange" v-close-popup></q-btn>
+                                </q-card-actions>
+                            </q-card>
+
+                        </q-dialog>
+                    </q-tab-panel>
+                    
+                    <q-tab-panel name="warn" v-if="this.personalgroup == 'superadmin'" :key="componentKey">
+                        <div class="loading-panel hide">
+                            <q-spinner-hourglass
+                                    color="orange"
+                                    size="2em"
+
+                            />
+                        </div>
+                        <p class="panel-title">Warns</p>
+                        <div class="warn-main-container">
+                            <div class="warn-action-container">
+                                <q-input
+                                        v-model="filterWarnInput"
+                                        label="Search"
+                                        type="text"
+                                        class="warn-action-input"
+                                        @keyup="filterWarn()"
+                                        dark></q-input>
+                            </div>
+                            <div class="warn-content-container">
+                                <q-table
+                                        :rows="filteredWarns"
+                                        :columns="warnsTableColumns"
+                                        :loading="warnsloading"
+                                        row-key="player"
+                                        class="warn-table"
+                                        dark>
+                                    <template v-slot:testLoading>
+                                        <q-inner-loading showing color="primary"></q-inner-loading>
+                                    </template>
+                                    <template v-slot:body="props">
+                                        <q-tr :props="props" v-on:click="warnPlayerInfo[0].name = props.row.player,warnPlayerInfo[0].reason = props.row.reason,warnCheckDialog = true; DebugPrint(props)">
+                                            <q-td key="player" :props="props">
+                                                {{ props.row.player }}
+                                            </q-td>
+                                            <q-td key="admin" :props="props">
+                                                {{ props.row.admin }}
+                                            </q-td>
+                                            <q-td key="licence" :props="props">
+                                                {{ props.row.licence }}
+                                            </q-td>
+                                            <q-td key="date" :props="props">
+                                                {{ props.row.date }}
+                                            </q-td>
+                                            <q-td key="hour" :props="props">
+                                                {{ props.row.hour }}
+                                            </q-td>
+
+                                        </q-tr>
+                                    </template>
+
+                                </q-table>
+                            </div>
+                        </div>
+                        
+                        <q-dialog
+                                v-model="warnCheckDialog"
+
+                                max-width="500px"
+                                max-height="500px"
+                                class="warn-dialog"
+                        >
+                            <q-card dark>
+                                <q-card-section>
+                                    <div class="text-h6">Warn Information</div>
+                                </q-card-section>
+                                <q-card-section class="warn-dialog-form-container">
+                                    <div>
+                                        <p>Player Name : {{warnPlayerInfo[0].name}}</p>
+                                    </div>
+                                    <div>
+                                        <p>Reason: {{warnPlayerInfo[0].reason}}</p>
+                                    </div>
+                                </q-card-section>
+
+                                <q-card-actions align="right">
+                                    <q-btn flat label="Close" color="orange" v-close-popup></q-btn>
+                                </q-card-actions>
+                            </q-card>
+
+                        </q-dialog>
+                    </q-tab-panel>
+                    <q-tab-panel name="report">
+                        <div class="loading-panel hide">
+                            <q-spinner-hourglass
+                                    color="orange"
+                                    size="2em"
+                            />
+                        </div>
+                        <p class="panel-title">Report</p>
+                        <div class="report-main-container" v-if="this.personalgroup == 'superadmin'" :key="componentKey">
+                            <q-table
+                                    :rows="filteredReports"
+                                    :columns="reportsTableColumns"
+                                    :loading="reportsloading"
+                                    row-key="id"
+                                    class="report-table"
+                                    min-height=""
+                                    dark>
+                                <template v-slot:testLoading>
+                                    <q-inner-loading showing color="primary"></q-inner-loading>
+                                </template>
+                                <template v-slot:body="props">
+                                    <q-tr :props="props" v-on:click="reportPlayerInfo[0].name = props.row.name,reportPlayerInfo[0].sujet = props.row.sujet,reportPlayerInfo[0].reason = props.row.reason,reportPlayerInfo[0].date = props.row.date,reportPlayerInfo[0].hour = props.row.hour,reportCheckDialog = true; DebugPrint(props)">
+                                        <q-td key="name" :props="props">
+                                            {{ props.row.name }}
+                                        </q-td>
+                                        <q-td key="sujet" :props="props">
+                                            {{ props.row.sujet }}
+                                        </q-td>
+                                        <q-td key="reason" :props="props">
+                                            {{ props.row.reason }}
+                                        </q-td>
+                                        <q-td key="date" :props="props">
+                                            {{ props.row.date }}
+                                        </q-td>
+                                        <q-td key="hour" :props="props">
+                                            {{ props.row.hour }}
+                                        </q-td>
+                                    </q-tr>
+                                </template>
+
+                        </div>
+                        <q-dialog
+                                v-model="reportCheckDialog"
+
+                                max-width="500px"
+                                max-height="500px"
+                                class="warn-dialog"
+                        >
+                            <q-card dark>
+                                <q-card-section>
+                                    <div class="text-h6">Report Information</div>
+                                </q-card-section>
+                                <q-card-section class="warn-dialog-form-container">
+                                    <div>
+                                        <p>Player Name : {{reportPlayerInfo[0].name}}</p>
+                                    </div>
+                                    <div>
+                                        <p>Sujet: {{reportPlayerInfo[0].sujet}}</p>
+                                    </div>
+                                    <div>
+                                        <p>Reason: {{reportPlayerInfo[0].reason}}</p>
+                                    </div>
+                                    <div>
+                                        <p>Date: {{reportPlayerInfo[0].date}} {{reportPlayerInfo[0].hour}}</p>
+                                    </div>
+                                </q-card-section>
+
+                                <q-card-actions align="right">
+                                    <q-btn flat label="Close" color="orange" v-close-popup></q-btn>
+                                </q-card-actions>
+                            </q-card>
+
+                        </q-dialog>
+                        <div class="report-main-container_user" v-if="this.personalgroup == 'user'" :key="componentKey">
+                            <q-input
+                                v-model="SubjetReportInput"
+                                label="Subject"
+                                type="text"
+                                class="report-input"
+                                dark>
+                            </q-input>
+                            <q-separator dark spaced></q-separator>
+                            <q-editor v-model="contentReportInput" min-height="40vh" dark ></q-editor>
+                            
+                            <q-separator dark spaced></q-separator>
+                            <q-btn
+                                    v-on:click="sendReport()"
+                                    flat
+                                    label="Send"
+                                    color="orange"
+                                    class="report-btn"
+                                    dark
+                            ></q-btn>
+                        </div>
+                    </div>
+                </q-tab-panel>
+
+            </q-tab-panels>
+        </div>
+        </main>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.2.31/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quasar@2.6.1/dist/quasar.umd.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quasar@2.6.1/dist/lang/fr.umd.prod.js"></script>
+    
+    <script src="script.js"></script>
+</body>
+</html>
