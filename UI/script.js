@@ -1338,9 +1338,9 @@ var vm = Vue.createApp({
           if (element.id == player.id){
             element.id = player.id;
             element.name = player.name;
-            element.group = player.data.group;
-            element.money = player.data.accounts[0].money;
-            element.bank = player.data.accounts[2].money;
+            element.group = player.group;
+            element.money = player.money;
+            element.bank = player.bank;
             element.data = player.data;
             element.job = player.data.job.label;
             element.ip = player.ip;
@@ -1426,6 +1426,7 @@ fetch('https://iAdmin/CallBack',{
   })
 }
 
+
 window.addEventListener("message", (event) => {
     var e = event.data;
     var panel = vm._component;
@@ -1480,9 +1481,9 @@ window.addEventListener("message", (event) => {
               id: player.id,
               name: player.name,
               job: player.data.job.name,
-              group: player.data.group,
-              money: player.data.accounts[0].money,
-              bank: player.data.accounts[2].money,
+              group: player.group,
+              money: player.money,
+              bank: player.bank,
               data: player.data,
               licence: player.licence,
             }

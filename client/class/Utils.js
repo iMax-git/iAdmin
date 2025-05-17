@@ -341,8 +341,6 @@ class Utils {
 
 
 
-
-
     ErrorMessage(msg){
         SendNUIMessage({action: "ErrorMessage",message: msg});
     }
