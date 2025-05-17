@@ -63,7 +63,7 @@ class Logs{
     }
 
     save(){
-        console.log("[iAdmin | Logs | Save] "+Config["Locales"][Config["Lang"]]["logs_saving"]);
+        console.log("[iAdmin | Logs | Save] "+Config["Locales"][Config["Lang"]]["logs_file_saved"]);
         if(Config["Debug"] && Config["DebugZone"]["Logs"]) console.log("[iAdmin | Logs | Save] ", this.logs);
         const res = {
             logs: this.logs

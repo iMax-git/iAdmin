@@ -1,11 +1,12 @@
 Config = {
+    extended: "extended", // name of your esx resource
     Lang: "fr-FR", // "fr-FR" or "en-US"
     Debug: true, /* Debug mode */
     DebugZone :{
         Logs: false,
-        Ban: true,
-        Warn: true,
-        Report: true,
+        Ban: false,
+        Warn: false,
+        Report: false,
     },
     Personal_Event:{
         "revive": "myHealthScript:revivePlayer", /* Your event received one argument => player id */
@@ -17,6 +18,21 @@ Config = {
         key: {
             control: "F10", /* touche (https://docs.fivem.net/docs/game-references/input-mapper-parameter-ids/keyboard/) */
             description: "Open iAdmin Menu" /* for key description on GTA V settings (screen: ...) */
+        }
+    },
+
+    AllowedLicences: {
+        ["license:2dec8b0c73abe9036593f91273a334225071b3a3"] : true,
+    },
+
+    Controles: {
+        NOCLIP: {
+            UP : 44, // A
+            DOWN : 48, // W
+            LEFT : 35, // Q
+            RIGHT : 34, // D
+            FORWARD : 32, // Z
+            BACKWARD : 33, // S
         }
     },
 

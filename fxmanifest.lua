@@ -1,6 +1,7 @@
 fx_version "adamant"
 game "gta5"
 
+version "1.2.0"
 shared_script "config.js"
 
 ui_page "UI/index.html"

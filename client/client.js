@@ -1,4 +1,4 @@
-const ESX = exports["extended"].getSharedObject();
+const ESX = exports[Config["extended"]].getSharedObject();
 const util = new Utils();
 const player = new Player(ESX.PlayerData, GetPlayerServerId(PlayerId()), GetPlayerName(PlayerId()));
 var loaded = false;

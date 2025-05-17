@@ -259,6 +259,7 @@ var vm = Vue.createApp({
             serverperso_collision: Vue.ref(true),
             serverperso_invisible: Vue.ref(false),
             serverperso_godmode: Vue.ref(false),
+            serverperso_noclip: Vue.ref(false),
 
             nameRules: [
               val => (val && val.length > 0) || 'Please type something'
@@ -834,6 +835,10 @@ var vm = Vue.createApp({
               this.teleportMarker();
               break;
             }
+            case "vehiculeFix":{
+              this.vehiculeFix();
+              break;
+            }
             case "spectate": {
               this.messageInfo("Spectating " + this.playerName);
               this.spectate();
@@ -1128,6 +1133,13 @@ var vm = Vue.createApp({
         this.callback(info);
       },
 
+      vehiclefix(){
+        const info = {
+          action : "vehiclefix",
+        }
+        this.callback(info);
+      },
+
       Warn(){
         const info = {
           action : "warn",
@@ -1229,6 +1241,13 @@ var vm = Vue.createApp({
           data : {
             licence : licence,
           }
+        }
+        this.callback(info)
+      },
+
+      vehiculeFix(){
+        const info = {
+          action : "vehiculeFix",
         }
         this.callback(info)
       },
@@ -1382,6 +1401,30 @@ vm.use(Quasar, {
 
 Quasar.lang.set(Quasar.lang.fr);
 vm.mount('#app');
+
+
+// key down
+document.addEventListener('keydown', function (event) {
+  if (event.keyCode == 27) {
+      quit();
+  }
+});
+
+function quit(){
+var panel = vm._component;
+document.getElementById("app").classList.toggle("hide"); panel.methods.closeAll();
+fetch('https://iAdmin/CallBack',{
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+    },
+    body: JSON.stringify({
+      action : "quit"
+    }),
+  }).then(res => res.json()).then(data => {
+    // console.log(data);
+  })
+}
 
 window.addEventListener("message", (event) => {
     var e = event.data;

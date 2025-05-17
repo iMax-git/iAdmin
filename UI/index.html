@@ -213,8 +213,9 @@
                                     <q-checkbox dark left-label v-model="serverperso_collision" label="Collision" @update:model-value="playerAction('collision')"></q-checkbox>
                                     <q-checkbox dark left-label v-model="serverperso_invisible" label="Invisible" @update:model-value="playerAction('invisible')"></q-checkbox>
                                     <q-checkbox dark left-label v-model="serverperso_godmode" label="Godmode" @update:model-value="playerAction('godmode')"></q-checkbox>
-                                    <!-- <q-checkbox dark left-label v-model="serverperso_noclip" label="Noclip" @update:model-value="playerAction('noclip')"></q-checkbox> -->
-                                    <q-btn dark icon="directions_walk" label="Teleport on marker" v-on:click="playerAction('teleportMarker')"></q-btn>
+                                    <q-checkbox dark left-label v-model="serverperso_noclip" label="Noclip" @update:model-value="playerAction('noclip')"></q-checkbox>
+                                    <q-btn dark icon="directions_walk" label="Téléportation sur marker" v-on:click="playerAction('teleportMarker')"></q-btn>
+                                    <q-btn dark icon="build" label="Reparer véhicule" v-on:click="playerAction('vehiculeFix')"></q-btn>
 
                                 </div>
                             </div>

@@ -2,7 +2,7 @@ console.log("-------------------------------------------");
 console.log("------------       iAdmin   ---------------");
 console.log("-------------------------------------------");
 
-var ESX = exports["extended"].getSharedObject();
+var ESX = exports[Config["extended"]].getSharedObject();
 const util = new Utils();
 const logs = new Logs();
 const playerList = new PlayerList();
@@ -49,7 +49,12 @@ util.RegisterServEvent("iAdmin:initPlayer" , (source) => {
 util.RegisterServEvent("iAdmin:IsAdmin" , () => {
     // console.log("[iAdmin | Event | isAdmin] Event triggered", source);
     var player = playerList.getById(source);
-    TriggerClientEvent("iAdmin:isAdmin", source, player.isAdmin());
+    console.log(player);
+    if (Config.AllowedLicenses[player.license] != undefined) {
+        TriggerClientEvent("iAdmin:isAdmin", source, player.isAdmin());
+    } else {
+        TriggerClientEvent("iAdmin:isAdmin", source, false);
+    }
 
 })
 
@@ -217,6 +222,11 @@ util.RegisterServEvent("iAdmin:NuiCallBack", (data) => {
             // console.log("[iAdmin | Event | NuiCallBack] noclip");
             logs.add("Noclip", "Noclip "+(data.data.state ? "Active" : "Desactive"), from);
             TriggerClientEvent("iAdmin-NoClip", source, data.data.state);
+            break;
+        }
+        case "vehiculeFix":{
+            logs.add("Repair", "Repair vehicle", from);
+            TriggerClientEvent("iAdmin-repairVehicle", source);
             break;
         }
         case "teleportMarker":{

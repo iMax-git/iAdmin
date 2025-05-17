@@ -3,7 +3,7 @@ class Ban{
     constructor(){
         this.bans = [];
         this.#openfile();
-        console.log("[iAdmin | Warn | Constructor] "+Config["Locales"][Config["Lang"]]["ban_loaded"]);
+        console.log("[iAdmin | Ban | Constructor] "+Config["Locales"][Config["Lang"]]["ban_loaded"]);
     }
 
     #openfile(){

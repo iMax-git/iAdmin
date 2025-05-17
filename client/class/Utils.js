@@ -114,6 +114,9 @@ class Utils {
             this.NoClipActive = bool;
             this.NoClip();
         })
+        this.registerClientEvent("iAdmin-repairVehicle", () => {
+            this.repairVehicle();
+        })
         this.registerClientEvent("iAdmin-invisible", (state) =>{
             SetEntityVisible(PlayerPedId(), !state, !state)
         })
@@ -123,13 +126,27 @@ class Utils {
         this.registerClientEvent("iAdmin-godmode", (state) =>{
             SetEntityInvincible(PlayerPedId(), state)
         })
-        this.registerClientEvent("iAdmin-teleportMarker", ()=>{
+        this.registerClientEvent("iAdmin-teleportMarker", async ()=>{
             const waypoint = GetFirstBlipInfoId(8);
             if (DoesBlipExist(waypoint)){
-                const [x,y,z] = GetBlipCoords(waypoint);
-                var [_,gz] = GetGroundZFor_3dCoord(x,y,z,true);
-                SetEntityCoords(PlayerPedId(), x,y,gz, true, true, true, true);
-                this.SuccessMessage("Teleported to marker position => "+x+" "+y+" "+z+" "+gz);
+                var waypointCoords = GetBlipInfoIdCoord(waypoint);
+                var foundGround = false;
+                var zCoords = -500.0;
+                var zPos = 0.0;
+                while (!foundGround){
+                    zCoords = zCoords + 100.0;
+                    RequestCollisionAtCoord(waypointCoords[0], waypointCoords[1], zCoords);
+                    await this.Wait(5);
+                    while (!HasCollisionLoadedAroundEntity(PlayerPedId())){await this.Wait(5);}
+                    var [foundGround, zPos] = GetGroundZFor_3dCoord(waypointCoords[0], waypointCoords[1], zCoords);
+                    if (!foundGround && zCoords >= 2000.0){
+                        foundGround = true;
+                        break;
+                    }
+                }
+                SetPedCoordsKeepVehicle(PlayerPedId(), waypointCoords[0], waypointCoords[1], zPos);
+                this.SuccessMessage("Teleported to waypoint => x:" + waypointCoords[0] + " y:" + waypointCoords[1] + " z:" + zPos);
+
             } else {
                 this.ErrorMessage("No waypoint found");
             }
@@ -198,6 +215,75 @@ class Utils {
         })
     }
 
+    async NoClip(){
+        console.log("[iAdmin] NoClip fnc trigger : "+this.NoClipActive);
+        while (this.NoClipActive){
+            await this.Wait(0);
+            var ped = PlayerPedId();
+            var [x,y,z] = GetEntityCoords(ped);
+            var [x2,y2,z2] = GetEntityForwardVector(ped);
+            FreezeEntityPosition(ped, true);
+            SetEntityCollision(ped, false, false);
+            TaskPlayAnim(ped, "anim@heists@prison_heiststation@cop_reactions", "cop_b_idle", 8.0, 8.0, -1, 49, 0, false, false, false);
+            var speed = 1.0;
+            if (IsControlPressed(0, 21)) {
+                speed = 5.0;
+            }
+            
+            // Controle :
+            // UP : A
+            // DOWN : W
+            // LEFT : Q
+            // RIGHT : D
+            // FORWARD : Z
+            // BACKWARD : S
+            console.log(Config["Controles"]["NOCLIP"]["BACKWARD"]);
+            if (IsControlPressed(0, Config["Controles"]["NOCLIP"]["FORWARD"])) {
+                x += x2 * speed;
+                y += y2 * speed;
+                z += z2 * speed;
+            }
+            if (IsControlPressed(0, Config["Controles"]["NOCLIP"]["BACKWARD"])) {
+                x -= x2 * speed;
+                y -= y2 * speed;
+                z -= z2 * speed;
+            }
+            if (IsControlPressed(0, Config["Controles"]["NOCLIP"]["RIGHT"])) {
+                SetEntityHeading(ped, GetEntityHeading(ped) + 1.0);
+            }
+            if (IsControlPressed(0, Config["Controles"]["NOCLIP"]["LEFT"])) {
+                SetEntityHeading(ped, GetEntityHeading(ped) - 1.0);
+            }
+            if (IsControlPressed(0, Config["Controles"]["NOCLIP"]["UP"])) {
+                z += speed;
+            }
+            if (IsControlPressed(0, Config["Controles"]["NOCLIP"]["DOWN"])) {
+                z -= speed;
+            }
+
+
+            SetEntityCoordsNoOffset(ped, x, y, z, true, true, true);
+            
+        }
+        FreezeEntityPosition(ped, false);
+        SetEntityCollision(ped, true, true);
+
+    }
+
+    repairVehicle(){
+        if (IsPedInAnyVehicle(PlayerPedId(), false)) {
+            var vehicle = GetVehiclePedIsIn(PlayerPedId(), false);
+            SetVehicleFixed(vehicle);
+            SetVehicleDeformationFixed(vehicle);
+            SetVehicleDirtLevel(vehicle, 0.0);
+            SetVehicleUndriveable(vehicle, false);
+            SetVehicleEngineOn(vehicle, true, true);
+            this.SuccessMessage("Vehicle repaired");
+        } else {
+            this.ErrorMessage("You are not in a vehicle");
+        }
+    }
+
     IsAdmin(){
         this.serverEvent("iAdmin:IsAdmin");
         
@@ -228,10 +314,16 @@ class Utils {
         on("__cfx_nui:CallBack", (data) => {
             var jsonData = JSON.stringify(data);
             // console.log(`[iAdmin | NuiCallBack] Utils ^2${jsonData}^0 a été enregistré`);
-            util.serverEvent("iAdmin:NuiCallBack", data);
+            if (data.action == "quit"){
+                if (menuOpen){
+                    menuOpen = false;
+                    SetNuiFocus(false, false);
+                }
+            } else {
+                util.serverEvent("iAdmin:NuiCallBack", data);
+            }
         });
     }
-
 
 
 
